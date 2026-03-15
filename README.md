@@ -121,7 +121,7 @@ y.value_counts()
 ```
 ![Target Distribution](https://raw.githubusercontent.com/korede-folarin/IMAGES-FOR-FAIRNESS-PROJECT-/main/images/targetclasses.png)
 
-```
+
 
 ---
 
