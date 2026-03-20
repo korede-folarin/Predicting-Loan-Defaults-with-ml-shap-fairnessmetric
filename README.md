@@ -67,7 +67,7 @@ Six research hypotheses are formally tested using statistical significance tests
 
 ---
 
-## 📊 Dataset
+##  Dataset
 
 The project uses a **credit risk dataset** (`credit_risk_dataset.csv`) with borrower financial and demographic profiles. Key features include:
 
@@ -92,7 +92,7 @@ The project uses a **credit risk dataset** (`credit_risk_dataset.csv`) with borr
 > The link to the raw dataset is included in this repository. 
 ---
 
-## ⚙️ Pipeline — Detailed Breakdown
+##  Pipeline — Detailed Breakdown
 
 ### Stage 1 — Data Preprocessing
 
@@ -102,8 +102,8 @@ The project uses a **credit risk dataset** (`credit_risk_dataset.csv`) with borr
 
 **Outlier Detection & Treatment:**
 - Applied to: `person_age`, `person_income`, `loan_amnt`, `loan_int_rate`
-- Method: IQR-based detection using `Q1 - 3×IQR` and `Q3 + 3×IQR` bounds
-- Treatment: **Winsorization**, outliers capped at bounds rather than removed, preserving sample size
+- Method: **Applied IQR-based outlier detection using Tukey’s fences (3×IQR) instead of the standard 1.5×IQR.** A wider threshold was chosen because variables such as income, loan amount, and interest rate are inherently skewed and may contain legitimate extreme values.
+- Treatment: Outliers were handled using **Winsorization**, capping values at the upper and lower bounds to preserve dataset size while reducing the impact of extreme observation
 
 ```python
 Q1 = df[col].quantile(0.25)
@@ -125,7 +125,7 @@ y.value_counts()
 
 ---
 
-### Stage 2 — Feature Engineering
+### Stage 2: Feature Engineering
 
 Four engineered features are created to capture financial risk signals:
 
@@ -147,7 +147,7 @@ df = pd.get_dummies(df, columns=['person_home_ownership', 'loan_intent', 'loan_g
 
 ---
 
-### Stage 3 — Model Training
+### Stage 3:  Model Training
 
 **Data Split:**
 ```python
@@ -160,7 +160,7 @@ X_train, X_test, y_train, y_test = train_test_split(
 ```
 
 **Scaling:**
-StandardScaler applied exclusively to Logistic Regression (fit on train, transform on test to prevent leakage):
+Applied StandardScaler to normalize feature values for **Logistic Regression**, ensuring all variables contribute equally to model training. Scaling was fitted on training data and applied to test data to prevent data leakage.
 ```python
 scaler = StandardScaler()
 X_train_scaled = scaler.fit_transform(X_train)
@@ -168,6 +168,12 @@ X_test_scaled  = scaler.transform(X_test)
 ```
 
 **Model Configurations:**
+
+I chose four models to enable systematic comparison:
+
+**Logistic Regression**: Baseline linear model for interpretability benchmarking
+**Random Forest**: Bagging ensemble to assess feature interaction learning
+**XGBoost & LightGBM**: Gradient boosting variants to evaluate state-of-the-art performance and compare architectural differences (level-wise vs. leaf-wise growth)
 
 ```python
 # Logistic Regression (Baseline)
@@ -179,10 +185,11 @@ RandomForestClassifier(n_estimators=100, max_depth=10,
                        min_samples_split=20, min_samples_leaf=10,
                        class_weight='balanced', random_state=42, n_jobs=-1)
 
-# XGBoost (Hyperparameter Tuned)
-XGBClassifier(scale_pos_weight=<imbalance_ratio>, random_state=42)
-# GridSearchCV: n_estimators=[100,200], max_depth=[6,8,10],
-#               learning_rate=[0.05,0.1,0.2], cv=3, scoring='roc_auc'
+# XGBoost 
+ XGBClassifier(n_estimators=100, max_depth=6,
+                    learning_rate=0.1, scale_pos_weight=scale_pos_weight,
+                    random_state=42,  eval_metric='logloss', use_label_encoder=False)
+
 
 # LightGBM
 LGBMClassifier(random_state=42)
@@ -190,7 +197,7 @@ LGBMClassifier(random_state=42)
 
 ---
 
-### Stage 4 — Model Evaluation
+### Stage 4: Model Evaluation
 
 **Metrics computed for all models:**
 - ROC-AUC (primary metric)
